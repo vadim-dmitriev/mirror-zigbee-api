@@ -1,4 +1,4 @@
-# docker run -d --restart=unless-stopped -name mirror-zigbee-api <imageID>
+# docker run -d --restart=unless-stopped --name mirror-zigbee-api --network="host" <imageID>
 
 FROM golang:1.19-alpine
 
