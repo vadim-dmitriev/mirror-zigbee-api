@@ -1,15 +1,14 @@
 package zigbee
 
-import "context"
+import (
+	"context"
+
+	"github.com/vadim-dmitriev/mirror-zigbee-api/internal/domain"
+)
 
 // Zigbee интерфейс взаимодействия с устройствами умного дома
 // работающий по Zigbee протоколу.
 type Zigbee interface {
-	Serve(devices ...Device) error
-
-	GetAllDevices(context.Context) ([]*Device, error)
-}
-
-type Device struct {
-	Name string
+	GetAllDevices(context.Context) ([]*domain.Device, error)
+	SetDeviceStatus(context.Context, domain.DeviceName, domain.DeviceStatus) error
 }

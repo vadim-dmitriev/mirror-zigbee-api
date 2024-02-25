@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/vadim-dmitriev/mirror-zigbee-api/internal/zigbee"
+	"github.com/vadim-dmitriev/mirror-zigbee-api/internal/domain"
 	zigbee_service_pb "github.com/vadim-dmitriev/mirror-zigbee-api/pkg/zigbee-service"
 )
 
@@ -31,9 +31,14 @@ func (zs *zigbeeService) GetDevices(ctx context.Context, request *zigbee_service
 	}, nil
 }
 
-func mapDevice(device *zigbee.Device) *zigbee_service_pb.Device {
+func mapDevice(device *domain.Device) *zigbee_service_pb.Device {
 	pbDevice := &zigbee_service_pb.Device{
 		Name: device.Name,
+		Characteristics: &zigbee_service_pb.Device_Characteristics{
+			Description: device.Characteristics.Description,
+			Vendor:      device.Characteristics.Vendor,
+			Model:       device.Characteristics.Model,
+		},
 	}
 
 	return pbDevice

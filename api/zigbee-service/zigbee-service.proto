@@ -4,6 +4,7 @@ package zigbee_service;
 option go_package = "zigbee-service.;zigbee_service_pb";
 
 import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
 
 service ZigbeeService {
     rpc GetDevices(Empty) returns (GetDevicesResponse) {
@@ -11,14 +12,32 @@ service ZigbeeService {
             get: "/v1/get_devices"
         };
     };
+
+    rpc SetDeviceStatus(SetDeviceStatusRequest) returns (Empty) {
+        option (google.api.http) = {
+            get: "/v1/set_device_status"
+        };
+    };
 };
 
 message Empty {};
 
 message Device {
+    message Characteristics {
+        string description = 1;
+        string vendor = 2;
+        string model = 3;
+    }
+
     string name = 1;
+    Characteristics characteristics = 2;
 }
 
 message GetDevicesResponse {
     repeated Device devices = 1;
+}
+
+message SetDeviceStatusRequest {
+    string name = 1;
+    google.protobuf.BoolValue status = 2;
 }

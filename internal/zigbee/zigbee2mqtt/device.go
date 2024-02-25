@@ -1,15 +1,22 @@
 package zigbee2mqtt
 
-// Device описывает интерфейс взаимодействия с устройствами
-// умного дома Zigbee, которые умеют работать по технологии zigbee2mqtt.
-// type Device interface {
-// 	// Наследует общий интерфейс устройств - zigbee.Device.
-// 	zigbee.Device
+const (
+	deviceStatusOFF = "OFF"
+	deviceStatusON  = "ON"
+)
 
-// 	GetTopic() string
-// 	GetHandler() mqtt.MessageHandler
-// }
+type device struct {
+	FriendlyName string     `json:"friendly_name"`
+	Definition   definition `json:"definition"`
+}
 
-type Device struct {
-	FriendlyName string `json:"friendly_name"`
+type definition struct {
+	Description string `json:"description"`
+	Vendor      string `json:"vendor"`
+	Model       string `json:"model"`
+}
+
+var deviceStatus = map[bool]string{
+	false: deviceStatusOFF,
+	true:  deviceStatusON,
 }
