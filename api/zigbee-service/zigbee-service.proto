@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package zigbee_service;
+option go_package = "zigbee-service.;zigbee_service_pb";
+
+import "google/api/annotations.proto";
+
+service ZigbeeService {
+    rpc GetDevices(Empty) returns (GetDevicesResponse) {
+        option (google.api.http) = {
+            get: "/v1/get_devices"
+        };
+    };
+};
+
+message Empty {};
+
+message Device {
+    string name = 1;
+}
+
+message GetDevicesResponse {
+    repeated Device devices = 1;
+}

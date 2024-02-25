@@ -1,46 +1,49 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"os"
-	"os/signal"
 
-	ledapi "github.com/vadim-dmitriev/mirror-zigbee-api/internal/clients/led_api"
+	"github.com/vadim-dmitriev/mirror-zigbee-api/internal/server"
 	"github.com/vadim-dmitriev/mirror-zigbee-api/internal/zigbee/zigbee2mqtt"
-	"github.com/vadim-dmitriev/mirror-zigbee-api/internal/zigbee/zigbee2mqtt/devices"
+	zigbee_service_pb "github.com/vadim-dmitriev/mirror-zigbee-api/pkg/zigbee-service"
+	zigbee_service "github.com/vadim-dmitriev/mirror-zigbee-api/service/zigbee-service"
 )
 
 const (
-	zigbee2mqttDSN = "mqtt://localhost:1883/"
-
-	ledAPIHost = "localhost:8090"
+	// grpcPort порт для gRPC соединений.
+	grpcPort = 9080
+	// httpPort порт для HTTP соединений.
+	httpPort = 9081
 )
 
 func main() {
-	// Создаем всех клиентов.
-	ledAPIClent := ledapi.New(ledAPIHost)
+	ctx := context.Background()
 
-	// Создаем zigbee контроллер.
-	z2mClient := zigbee2mqtt.New(zigbee2mqttDSN)
-
-	// Добавляем устройства.
-	button1 := devices.NewWxkg01lm(ledAPIClent)
-
-	// Стартуем zigbee котроллер.
-	if err := z2mClient.Serve(button1); err != nil {
+	zigbeeClient, err := zigbee2mqtt.New()
+	if err != nil {
 		panic(err)
 	}
 
-	// Программа работает пока не будет завершения.
-	waitForInterrupt()
-}
-
-func waitForInterrupt() {
-	exitChan := make(chan os.Signal)
-	signal.Notify(exitChan, os.Interrupt)
-
-	select {
-	case <-exitChan:
-		fmt.Println("exiting...")
+	zigbeeService, err := zigbee_service.New(
+		zigbeeClient,
+	)
+	if err != nil {
+		panic(err)
 	}
+
+	grpcServer, err := server.NewGRPC(grpcPort)
+	if err != nil {
+		panic(fmt.Errorf("failed to create gRPS server: %w", err))
+	}
+	grpcServer.RegisterService(&zigbee_service_pb.ZigbeeService_ServiceDesc, zigbeeService)
+
+	go grpcServer.Run()
+
+	httpServer, err := server.NewHTTP(httpPort, grpcPort)
+	if err != nil {
+		panic(fmt.Errorf("failed to create HTTP server: %w", err))
+	}
+
+	httpServer.Run(ctx)
 }
