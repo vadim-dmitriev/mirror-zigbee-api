@@ -9,6 +9,7 @@ import (
 
 	"github.com/vadim-dmitriev/mirror-zigbee-api/internal/domain"
 	zigbee_service_pb "github.com/vadim-dmitriev/mirror-zigbee-api/pkg/zigbee-service"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func (zs *zigbeeService) GetDevices(ctx context.Context, request *zigbee_service_pb.Empty) (*zigbee_service_pb.GetDevicesResponse, error) {
@@ -32,6 +33,7 @@ func (zs *zigbeeService) GetDevices(ctx context.Context, request *zigbee_service
 }
 
 func mapDevicePb(device *domain.Device) *zigbee_service_pb.Device {
+	fmt.Println(device.Name)
 	readables := make([]*zigbee_service_pb.State, 0)
 	for _, readable := range device.Readable {
 		readables = append(readables, mapStatePb(readable))
@@ -49,8 +51,9 @@ func mapDevicePb(device *domain.Device) *zigbee_service_pb.Device {
 			Vendor:      device.Characteristics.Vendor,
 			Model:       device.Characteristics.Model,
 		},
-		Readable: readables,
-		Editable: editables,
+		Reachable: wrapperspb.Bool(device.Reachable),
+		Readable:  readables,
+		Editable:  editables,
 	}
 
 	return pbDevice

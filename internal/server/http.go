@@ -26,8 +26,17 @@ type HTTPServer struct {
 }
 
 // NewHTTP creates new HTTPServer object.
-func NewHTTP(httpPort int, grpcPort int) (*HTTPServer, error) {
+func NewHTTP(httpPort int, grpcPort int, zigbeeToWSMessageChan chan string) (*HTTPServer, error) {
 	mux := runtime.NewServeMux()
+
+	wsHandler, err := newWSHandler(zigbeeToWSMessageChan)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ws handler: %w", err)
+	}
+
+	mux.HandlePath("GET", "/zigbee_ws", func(w http.ResponseWriter, r *http.Request, pathParams map[string]string) {
+		wsHandler.ServeHTTP(w, r)
+	})
 
 	s := &HTTPServer{
 		httpPort: httpPort,

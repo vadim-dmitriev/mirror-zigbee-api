@@ -20,7 +20,9 @@ const (
 func main() {
 	ctx := context.Background()
 
-	zigbeeClient, err := zigbee2mqtt.New()
+	zigbeeToWSMessageChan := make(chan string)
+
+	zigbeeClient, err := zigbee2mqtt.New(zigbeeToWSMessageChan)
 	if err != nil {
 		panic(err)
 	}
@@ -40,7 +42,7 @@ func main() {
 
 	go grpcServer.Run()
 
-	httpServer, err := server.NewHTTP(httpPort, grpcPort)
+	httpServer, err := server.NewHTTP(httpPort, grpcPort, zigbeeToWSMessageChan)
 	if err != nil {
 		panic(fmt.Errorf("failed to create HTTP server: %w", err))
 	}

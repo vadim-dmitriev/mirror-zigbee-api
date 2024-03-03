@@ -75,7 +75,7 @@ func (e *expose) hasFeatures() bool {
 
 type deviceStates = map[string]interface{}
 
-func mapExpose(expose *expose) *domain.DeviceState {
+func mapExpose(expose *expose, value interface{}) *domain.DeviceState {
 	exposeType := domain.DeviceStateType_UNKNOWN
 
 	switch expose.Type {
@@ -89,8 +89,9 @@ func mapExpose(expose *expose) *domain.DeviceState {
 	}
 
 	e := &domain.DeviceState{
-		Type: exposeType,
-		Name: expose.Name,
+		Type:  exposeType,
+		Name:  expose.Name,
+		Value: value,
 	}
 
 	return e

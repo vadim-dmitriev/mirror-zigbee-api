@@ -17,7 +17,7 @@ type DeviceState struct {
 
 type Device struct {
 	Name            string
-	Enable          bool
+	Reachable       bool
 	Characteristics *Characteristics
 	Readable        []*DeviceState
 	Editable        []*DeviceState

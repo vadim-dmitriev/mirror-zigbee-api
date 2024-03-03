@@ -5,6 +5,7 @@ option go_package = "zigbee-service.;zigbee_service_pb";
 
 import "google/api/annotations.proto";
 import "google/protobuf/wrappers.proto";
+// import "google/protobuf/any.proto";
 
 service ZigbeeService {
 
@@ -41,6 +42,7 @@ message Device {
 
     string id = 1;
     string name = 2;
+    google.protobuf.BoolValue reachable = 3;
     Characteristics characteristics = 4;
 
     repeated State initial_states = 5;
@@ -63,8 +65,9 @@ message State {
     
     oneof value {
         google.protobuf.BoolValue boolean_value = 3;
-        google.protobuf.Int32Value number_value = 4;
+        google.protobuf.Int64Value number_value = 4;
         google.protobuf.StringValue text_value = 5;
+        google.protobuf.FloatValue float_value = 6;
     };
 }
 

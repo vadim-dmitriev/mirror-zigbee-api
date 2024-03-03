@@ -15,6 +15,7 @@ import (
 
 	"github.com/vadim-dmitriev/mirror-zigbee-api/internal/domain"
 	zigbee_service_pb "github.com/vadim-dmitriev/mirror-zigbee-api/pkg/zigbee-service"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 func (zs *zigbeeService) SetDeviceState(ctx context.Context, request *zigbee_service_pb.SetDeviceStateRequest) (*zigbee_service_pb.SetDeviceStateResponse, error) {
@@ -63,22 +64,37 @@ func mapState(statePb *zigbee_service_pb.State) (*domain.DeviceState, error) {
 }
 
 func mapStatePb(state *domain.DeviceState) *zigbee_service_pb.State {
+	fmt.Println(state.Value)
+	statePb := &zigbee_service_pb.State{
+		Name: state.Name,
+	}
+
 	statePbType := zigbee_service_pb.State_Type_UNKNOWN
 
 	switch state.Type {
 	case domain.DeviceStateType_BOOLEAN:
 		statePbType = zigbee_service_pb.State_Type_BOOLEAN
+		val, ok := state.Value.(bool)
+		if !ok {
+			fmt.Println(ok)
+		}
+		if ok {
+			statePb.Value = &zigbee_service_pb.State_BooleanValue{wrapperspb.Bool(val)}
+		}
+
 	case domain.DeviceStateType_INTEGER:
 		statePbType = zigbee_service_pb.State_Type_NUMBER
+		val, ok := state.Value.(float64)
+		if ok {
+			statePb.Value = &zigbee_service_pb.State_FloatValue{wrapperspb.Float(float32(val))}
+		}
+
 	case domain.DeviceStateType_STRING:
 		statePbType = zigbee_service_pb.State_Type_TEXT
+		statePb.Value = &zigbee_service_pb.State_TextValue{wrapperspb.String(state.Value.(string))}
 	}
 
-	statePb := &zigbee_service_pb.State{
-		Type: statePbType,
-		Name: state.Name,
-		// Value: state.Value,
-	}
+	statePb.Type = statePbType
 
 	return statePb
 }

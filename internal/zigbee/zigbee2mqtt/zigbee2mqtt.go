@@ -31,11 +31,13 @@ type zigbee2mqtt struct {
 	devicesDefinitions  []*device
 	devicesAvailability map[string]bool
 	devicesStates       map[string]deviceStates
+
+	zigbeeToWSMessageChan chan string
 }
 
 // New создает объект, имплементирующий интерфейс zigbee.Zigbee
 // основанный на проекте zigbee2mqtt.
-func New() (zigbee.Zigbee, error) {
+func New(zigbeeToWSMessageChan chan string) (zigbee.Zigbee, error) {
 	opts := mqtt.NewClientOptions()
 
 	opts.AddBroker(zigbee2mqttDSN)
@@ -49,19 +51,22 @@ func New() (zigbee.Zigbee, error) {
 	}
 	log.Printf("[DONE] connecting to mqtt.")
 
+	z2m := &zigbee2mqtt{
+		mqttClient:            mqttClient,
+		zigbeeToWSMessageChan: zigbeeToWSMessageChan,
+	}
+
 	// Getting all devices definitions.
-	devicesDefinitions, err := getDevicesDefinitions(mqttClient)
+	devicesDefinitions, err := z2m.getDevicesDefinitions(mqttClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get devices definitions: %w", err)
 	}
-	log.Printf("[DONE] getting devices definitions. Found %d devices.\n", len(devicesDefinitions))
 
-	z2m := &zigbee2mqtt{
-		mqttClient:          mqttClient,
-		devicesDefinitions:  devicesDefinitions,
-		devicesAvailability: make(map[string]bool, len(devicesDefinitions)),
-		devicesStates:       make(map[string]map[string]interface{}, len(devicesDefinitions)),
-	}
+	z2m.devicesDefinitions = devicesDefinitions
+	z2m.devicesAvailability = make(map[string]bool, len(devicesDefinitions))
+	z2m.devicesStates = make(map[string]map[string]interface{}, len(devicesDefinitions))
+
+	log.Printf("[DONE] getting devices definitions. Found %d devices.\n", len(devicesDefinitions))
 
 	devicesAvailabilityTopics := make(map[string]byte, len(devicesDefinitions))
 	for _, device := range devicesDefinitions {
@@ -100,6 +105,7 @@ func (z2m *zigbee2mqtt) deviceAvailabilityHandler(client mqtt.Client, message mq
 	}
 
 	z2m.devicesAvailability[deviceName] = availability
+	z2m.zigbeeToWSMessageChan <- string(message.Payload())
 
 	log.Printf("device '%s' availability is '%s'\n",
 		deviceName,
@@ -121,11 +127,13 @@ func (z2m *zigbee2mqtt) deviceStatesHandler(client mqtt.Client, message mqtt.Mes
 	}
 
 	z2m.devicesStates[deviceName] = payload
+	z2m.zigbeeToWSMessageChan <- string(message.Payload())
 
 	log.Printf("device '%s' has a new state '%s'\n", deviceName, string(message.Payload()))
 }
 
-func getDevicesDefinitions(mqttClient mqtt.Client) ([]*device, error) {
+// TODO: Нельзя использовать замыкания внутри хендлера для Subscribe.
+func (z2m *zigbee2mqtt) getDevicesDefinitions(mqttClient mqtt.Client) ([]*device, error) {
 	getDevicesDefinitionsDoneChan := make(chan struct{})
 	getDevicesDefinitionsErrorChan := make(chan error)
 
@@ -142,7 +150,9 @@ func getDevicesDefinitions(mqttClient mqtt.Client) ([]*device, error) {
 			getDevicesDefinitionsErrorChan <- err
 			return
 		}
+
 		getDevicesDefinitionsDoneChan <- struct{}{}
+		z2m.zigbeeToWSMessageChan <- string(message.Payload())
 	})
 
 	select {
@@ -159,32 +169,33 @@ func (z2m *zigbee2mqtt) GetAllDevices(ctx context.Context) ([]*domain.Device, er
 	devices := make([]*domain.Device, 0, len(z2m.devicesDefinitions))
 
 	for _, rawDevice := range z2m.devicesDefinitions {
-
+		deviceName := rawDevice.FriendlyName
 		readable := make([]*domain.DeviceState, 0)
 		editable := make([]*domain.DeviceState, 0)
-		for _, rawDeviceExpose := range rawDevice.Definition.Exposes {
 
+		for _, rawDeviceExpose := range rawDevice.Definition.Exposes {
 			for _, rawFeature := range rawDeviceExpose.Features {
+
 				if (rawFeature.Access>>0)&1 == 1 {
-					readable = append(readable, mapExpose(rawFeature))
+					readable = append(readable, mapExpose(rawFeature, z2m.devicesStates[deviceName][rawFeature.Name]))
 				}
 				if (rawFeature.Access>>1)&1 == 1 {
-					editable = append(editable, mapExpose(rawFeature))
+					editable = append(editable, mapExpose(rawFeature, z2m.devicesStates[deviceName][rawFeature.Name]))
 				}
 			}
 
 			if (rawDeviceExpose.Access>>0)&1 == 1 {
-				readable = append(readable, mapExpose(rawDeviceExpose))
+				readable = append(readable, mapExpose(rawDeviceExpose, z2m.devicesStates[deviceName][rawDeviceExpose.Name]))
 			}
 			if (rawDeviceExpose.Access>>1)&1 == 1 {
-				editable = append(editable, mapExpose(rawDeviceExpose))
+				editable = append(editable, mapExpose(rawDeviceExpose, z2m.devicesStates[deviceName][rawDeviceExpose.Name]))
 			}
 
 		}
 
 		device := &domain.Device{
-			Name:   rawDevice.FriendlyName,
-			Enable: !rawDevice.Disabled,
+			Name:      rawDevice.FriendlyName,
+			Reachable: z2m.devicesAvailability[rawDevice.FriendlyName],
 			Characteristics: &domain.Characteristics{
 				Description: rawDevice.Definition.Description,
 				Vendor:      rawDevice.Definition.Vendor,
