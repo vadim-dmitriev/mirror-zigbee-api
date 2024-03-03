@@ -7,37 +7,77 @@ import "google/api/annotations.proto";
 import "google/protobuf/wrappers.proto";
 
 service ZigbeeService {
+
     rpc GetDevices(Empty) returns (GetDevicesResponse) {
         option (google.api.http) = {
             get: "/v1/get_devices"
         };
     };
 
-    rpc SetDeviceStatus(SetDeviceStatusRequest) returns (Empty) {
+    rpc SetDeviceState(SetDeviceStateRequest) returns (SetDeviceStateResponse) {
         option (google.api.http) = {
-            get: "/v1/set_device_status"
+            post: "/v1/set_device_state",
+            body: "*"
         };
     };
+
 };
 
 message Empty {};
 
 message Device {
+
     message Characteristics {
+
+        message Action {
+
+        };
+
         string description = 1;
         string vendor = 2;
         string model = 3;
-    }
+        repeated Action actions = 4;
+    };
 
-    string name = 1;
-    Characteristics characteristics = 2;
+    string id = 1;
+    string name = 2;
+    Characteristics characteristics = 4;
+
+    repeated State initial_states = 5;
+
+    repeated State readable = 6;
+    repeated State editable = 7;
+}
+
+message State {
+
+    enum Type {
+        Type_UNKNOWN = 0;
+        Type_BOOLEAN = 1;
+        Type_NUMBER = 2;
+        Type_TEXT = 3;
+    };
+
+    Type type = 1;
+    string name = 2;
+    
+    oneof value {
+        google.protobuf.BoolValue boolean_value = 3;
+        google.protobuf.Int32Value number_value = 4;
+        google.protobuf.StringValue text_value = 5;
+    };
 }
 
 message GetDevicesResponse {
     repeated Device devices = 1;
 }
 
-message SetDeviceStatusRequest {
+message SetDeviceStateRequest {
     string name = 1;
-    google.protobuf.BoolValue status = 2;
+    repeated State states = 2;
+}
+
+message SetDeviceStateResponse {
+    string name = 1;
+    repeated State states = 2;
 }

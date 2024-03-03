@@ -23,7 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ZigbeeServiceClient interface {
 	GetDevices(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetDevicesResponse, error)
-	SetDeviceStatus(ctx context.Context, in *SetDeviceStatusRequest, opts ...grpc.CallOption) (*Empty, error)
+	SetDeviceState(ctx context.Context, in *SetDeviceStateRequest, opts ...grpc.CallOption) (*SetDeviceStateResponse, error)
 }
 
 type zigbeeServiceClient struct {
@@ -43,9 +43,9 @@ func (c *zigbeeServiceClient) GetDevices(ctx context.Context, in *Empty, opts ..
 	return out, nil
 }
 
-func (c *zigbeeServiceClient) SetDeviceStatus(ctx context.Context, in *SetDeviceStatusRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/zigbee_service.ZigbeeService/SetDeviceStatus", in, out, opts...)
+func (c *zigbeeServiceClient) SetDeviceState(ctx context.Context, in *SetDeviceStateRequest, opts ...grpc.CallOption) (*SetDeviceStateResponse, error) {
+	out := new(SetDeviceStateResponse)
+	err := c.cc.Invoke(ctx, "/zigbee_service.ZigbeeService/SetDeviceState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (c *zigbeeServiceClient) SetDeviceStatus(ctx context.Context, in *SetDevice
 // for forward compatibility
 type ZigbeeServiceServer interface {
 	GetDevices(context.Context, *Empty) (*GetDevicesResponse, error)
-	SetDeviceStatus(context.Context, *SetDeviceStatusRequest) (*Empty, error)
+	SetDeviceState(context.Context, *SetDeviceStateRequest) (*SetDeviceStateResponse, error)
 	mustEmbedUnimplementedZigbeeServiceServer()
 }
 
@@ -68,8 +68,8 @@ type UnimplementedZigbeeServiceServer struct {
 func (UnimplementedZigbeeServiceServer) GetDevices(context.Context, *Empty) (*GetDevicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDevices not implemented")
 }
-func (UnimplementedZigbeeServiceServer) SetDeviceStatus(context.Context, *SetDeviceStatusRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetDeviceStatus not implemented")
+func (UnimplementedZigbeeServiceServer) SetDeviceState(context.Context, *SetDeviceStateRequest) (*SetDeviceStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetDeviceState not implemented")
 }
 func (UnimplementedZigbeeServiceServer) mustEmbedUnimplementedZigbeeServiceServer() {}
 
@@ -102,20 +102,20 @@ func _ZigbeeService_GetDevices_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ZigbeeService_SetDeviceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetDeviceStatusRequest)
+func _ZigbeeService_SetDeviceState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetDeviceStateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ZigbeeServiceServer).SetDeviceStatus(ctx, in)
+		return srv.(ZigbeeServiceServer).SetDeviceState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/zigbee_service.ZigbeeService/SetDeviceStatus",
+		FullMethod: "/zigbee_service.ZigbeeService/SetDeviceState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ZigbeeServiceServer).SetDeviceStatus(ctx, req.(*SetDeviceStatusRequest))
+		return srv.(ZigbeeServiceServer).SetDeviceState(ctx, req.(*SetDeviceStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -132,8 +132,8 @@ var ZigbeeService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ZigbeeService_GetDevices_Handler,
 		},
 		{
-			MethodName: "SetDeviceStatus",
-			Handler:    _ZigbeeService_SetDeviceStatus_Handler,
+			MethodName: "SetDeviceState",
+			Handler:    _ZigbeeService_SetDeviceState_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

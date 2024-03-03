@@ -21,7 +21,7 @@ func (zs *zigbeeService) GetDevices(ctx context.Context, request *zigbee_service
 
 	pbDevices := make([]*zigbee_service_pb.Device, 0, len(devices))
 	for _, device := range devices {
-		pbDevice := mapDevice(device)
+		pbDevice := mapDevicePb(device)
 
 		pbDevices = append(pbDevices, pbDevice)
 	}
@@ -31,7 +31,17 @@ func (zs *zigbeeService) GetDevices(ctx context.Context, request *zigbee_service
 	}, nil
 }
 
-func mapDevice(device *domain.Device) *zigbee_service_pb.Device {
+func mapDevicePb(device *domain.Device) *zigbee_service_pb.Device {
+	readables := make([]*zigbee_service_pb.State, 0)
+	for _, readable := range device.Readable {
+		readables = append(readables, mapStatePb(readable))
+	}
+
+	editables := make([]*zigbee_service_pb.State, 0)
+	for _, editable := range device.Editable {
+		editables = append(editables, mapStatePb(editable))
+	}
+
 	pbDevice := &zigbee_service_pb.Device{
 		Name: device.Name,
 		Characteristics: &zigbee_service_pb.Device_Characteristics{
@@ -39,6 +49,8 @@ func mapDevice(device *domain.Device) *zigbee_service_pb.Device {
 			Vendor:      device.Characteristics.Vendor,
 			Model:       device.Characteristics.Model,
 		},
+		Readable: readables,
+		Editable: editables,
 	}
 
 	return pbDevice

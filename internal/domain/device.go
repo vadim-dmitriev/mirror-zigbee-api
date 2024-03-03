@@ -1,12 +1,26 @@
 package domain
 
-type DeviceName = string
+type DeviceStateType uint8
 
-type DeviceStatus = bool
+const (
+	DeviceStateType_UNKNOWN = DeviceStateType(iota)
+	DeviceStateType_BOOLEAN
+	DeviceStateType_INTEGER
+	DeviceStateType_STRING
+)
+
+type DeviceState struct {
+	Type  DeviceStateType
+	Name  string
+	Value interface{}
+}
 
 type Device struct {
-	Name            DeviceName
+	Name            string
+	Enable          bool
 	Characteristics *Characteristics
+	Readable        []*DeviceState
+	Editable        []*DeviceState
 }
 
 type Characteristics struct {

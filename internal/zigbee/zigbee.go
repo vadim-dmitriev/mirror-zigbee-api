@@ -10,5 +10,5 @@ import (
 // работающий по Zigbee протоколу.
 type Zigbee interface {
 	GetAllDevices(context.Context) ([]*domain.Device, error)
-	SetDeviceStatus(context.Context, domain.DeviceName, domain.DeviceStatus) error
+	SetDeviceState(context.Context, string, []*domain.DeviceState) ([]*domain.DeviceState, error)
 }
